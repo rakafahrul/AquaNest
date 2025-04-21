@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "552773995749",
+    "project_id": "aquanest-ad54e",
+    "storage_bucket": "aquanest-ad54e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552773995749:android:f47202e8e9f857db55580c",
+        "android_client_info": {
+          "package_name": "com.univesity.aquanest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGytCVvan_AqhKVil9Le3oKw5S-hYwEH4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
