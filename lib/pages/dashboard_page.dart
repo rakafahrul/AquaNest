@@ -88,7 +88,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard Monitoring", style: TextStyle(color: Colors.white),),
+        title: const Text("Dashboard Monitoring AquaNest", style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.black,
         actions: [
           IconButton(
