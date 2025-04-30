@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'routes/app_routes.dart';
 
 void main() async {
@@ -36,11 +36,17 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.teal,
         useMaterial3: true,
+        fontFamily: 'Poppins',
       ),
-      initialRoute: FirebaseAuth.instance.currentUser == null
-          ? AppRoutes.login
-          : AppRoutes.dashboard,
+      initialRoute: AppRoutes.splash, // Splash
       routes: AppRoutes.routes,
+      // initialRoute: FirebaseAuth.instance.currentUser == null
+      // initialRoute: AppRoutes.splash,
+      // routes: AppRoutes.login,
+      // routes: AppRoutes.dashboard,
+          // ? AppRoutes.login
+          // : AppRoutes.dashboard,
+      // routes: AppRoutes.routes,
     );
   }
 }
