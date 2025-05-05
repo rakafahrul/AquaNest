@@ -8,20 +8,35 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await Firebase.initializeApp();
 
-  if (kIsWeb){
-    await Firebase.initializeApp(
-      options: FirebaseOptions(
+  await Firebase.initializeApp(
+    options: kIsWeb 
+      ? const FirebaseOptions(
           apiKey: "AIzaSyCPtIw3P_uKbuV4RspL2CN8k5en_1s9ruk",
-          authDomain: "sample-firebase-ai-app-af792.firebaseapp.com",
-          projectId: "sample-firebase-ai-app-af792",
-          storageBucket: "sample-firebase-ai-app-af792.appspot.com",
-          messagingSenderId: "944546339089",
-          appId: "1:944546339089:web:c41bf4f1652673f245d4b0",
-      ),
-    );
-  }else{
-    await Firebase.initializeApp(); 
-  }
+          authDomain: "aquanest-ad54e.firebaseapp.com",
+          projectId: "aquanest-ad54e",
+          messagingSenderId: "552773995749",
+          appId: "1:552773995749:web:f47202e8e9f857db55580c", // Pastikan ini app ID untuk web
+          databaseURL: "https://aquanest-ad54e-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        )
+      : null, // Untuk mobile akan menggunakan file konfigurasi default
+  );
+
+
+  // if (kIsWeb){
+  //   await Firebase.initializeApp(
+  //     options: FirebaseOptions(
+  //         apiKey: "AIzaSyCPtIw3P_uKbuV4RspL2CN8k5en_1s9ruk",
+  //         authDomain: "aquanest-ad54e.firebaseapp.com",
+  //         projectId: "aquanest-ad54e",
+  //         // storageBucket: "sample-firebase-ai-app-af792.appspot.com",
+  //         messagingSenderId: "552773995749",
+  //         appId: "1:552773995749:android:f47202e8e9f857db55580c",
+  //         databaseURL: "https://aquanest-ad54e-default-rtdb.asia-southeast1.firebasedatabase.app/"
+  //     ),
+  //   );
+  // }else{
+  //   await Firebase.initializeApp(); 
+  // }
   runApp(const MyApp());
 }
 

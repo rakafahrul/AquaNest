@@ -128,7 +128,7 @@ class ProfilePage extends StatelessWidget {
           ),
         )
       ),
-      bottomNavigationBar: const Navbar(selectedIndex: 4),
+      bottomNavigationBar: const Navbar(selectedIndex: 3),
 
     );
   }
