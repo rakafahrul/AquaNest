@@ -16,32 +16,42 @@ class _Navbar extends State<Navbar> {
   void _onItemTapped(int index) {
     if (index == widget.selectedIndex) return;
 
+    Widget destination;
     switch (index) {
       case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardPage()),
-        );
+        destination = const DashboardPage();
         break;
       case 1:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const PengurasanPage()),
-        );
+        destination = const PengurasanPage();
         break;
       case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HistoryPage()),
-        );
+        destination = const HistoryPage();
         break;
       case 3:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ProfilePage()),
-        );
+        destination = const ProfilePage();
         break;
+      default:
+        return;
     }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => destination,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = 0.0;
+          const end = 1.0;
+          const curve = Curves.easeInOut;
+
+          final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return FadeTransition(
+            opacity: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
   }
 
   @override
@@ -54,7 +64,7 @@ class _Navbar extends State<Navbar> {
           decoration: BoxDecoration(
             color: const Color.fromRGBO(5, 78, 149, 0.5).withOpacity(0.4),
             borderRadius: BorderRadius.circular(15),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black26,
                 blurRadius: 10,

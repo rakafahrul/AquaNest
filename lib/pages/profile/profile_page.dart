@@ -95,11 +95,22 @@ class ProfilePage extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 40),
-                    CircleAvatar(
-                      radius: 100,
-                      backgroundImage:
-                          const AssetImage('assets/images/profile/kepala.png'),
-                      backgroundColor: Colors.blue[100],
+                    Container(
+                      width: 200,
+                      height: 200,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFA7E9FF), Color(0xFFDCF5FF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 100,
+                        backgroundImage: AssetImage('assets/images/profile/kepala.png'),
+                        backgroundColor: Colors.transparent,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Text(

@@ -254,7 +254,7 @@ class _PengisianPageState extends State<PengisianPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Pengisian Air')),
-      bottomNavigationBar: const Navbar(selectedIndex: 2),
+      // bottomNavigationBar: const Navbar(selectedIndex: 2),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
