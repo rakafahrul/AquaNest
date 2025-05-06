@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:aquanest/pages/dashboard_page.dart';
-import 'package:aquanest/pages/history_page.dart';
-// import 'package:aquanest/pages/pengisian_page.dart';
+import 'package:aquanest/pages/history/history_page.dart';
 import 'package:aquanest/pages/pengurasan_page.dart';
-import 'package:aquanest/pages/profile_page.dart';
+import 'package:aquanest/pages/profile/profile_page.dart';
 
 class Navbar extends StatefulWidget {
   final int selectedIndex;
@@ -30,12 +29,6 @@ class _Navbar extends State<Navbar> {
           MaterialPageRoute(builder: (_) => const PengurasanPage()),
         );
         break;
-      // case 2:
-      //   Navigator.pushReplacement(
-      //     context,
-      //     MaterialPageRoute(builder: (_) => const PengisianPage()),
-      //   );
-      //   break;
       case 2:
         Navigator.pushReplacement(
           context,
@@ -55,7 +48,6 @@ class _Navbar extends State<Navbar> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-      // bottom: 50,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
         child: Container(
@@ -75,29 +67,45 @@ class _Navbar extends State<Navbar> {
             elevation: 0,
             currentIndex: widget.selectedIndex,
             onTap: _onItemTapped,
-            selectedItemColor: const Color.fromARGB(255, 247, 248, 249),
+            selectedItemColor: const Color(0xFF054B95),
             unselectedItemColor: Colors.white,
             type: BottomNavigationBarType.fixed,
             items: [
               BottomNavigationBarItem(
-                icon: Image.asset('assets/images/navbar/Home.png',width: 45,height: 45,color: Colors.white,),
+                icon: Image.asset(
+                  'assets/images/navbar/Home.png',
+                  width: 45,
+                  height: 45,
+                  color: widget.selectedIndex == 0 ? const Color(0xFF054B95) : Colors.white,
+                ),
                 label: 'Dashboard',
               ),
               BottomNavigationBarItem(
-                icon: Image.asset('assets/images/navbar/pengurasan.png',width: 45,height: 45, color: Colors.white,),
+                icon: Image.asset(
+                  'assets/images/navbar/pengurasan.png',
+                  width: 45,
+                  height: 45,
+                  color: widget.selectedIndex == 1 ? const Color(0xFF054B95) : Colors.white,
+                ),
                 label: 'Pengurasan',
               ),
-              // BottomNavigationBarItem(
-              //   icon: Image.asset('assets/images/navbar/pengurasan.png',width: 45,height: 45,),
-              //    label: 'Pengisian'
-              // ),
-              BottomNavigationBarItem(               
-                icon: Image.asset('assets/images/navbar/riwayat.png',width: 45,height: 45, color: Colors.white,),
-                 label: 'Riwayat'
+              BottomNavigationBarItem(
+                icon: Image.asset(
+                  'assets/images/navbar/riwayat.png',
+                  width: 45,
+                  height: 45,
+                  color: widget.selectedIndex == 2 ? const Color(0xFF054B95) : Colors.white,
+                ),
+                label: 'Riwayat',
               ),
               BottomNavigationBarItem(
-                icon: Image.asset('assets/images/navbar/profile.png',width: 45,height: 45,color: Colors.white,),
-                 label: 'Profile'
+                icon: Image.asset(
+                  'assets/images/navbar/profile.png',
+                  width: 45,
+                  height: 45,
+                  color: widget.selectedIndex == 3 ? const Color(0xFF054B95) : Colors.white,
+                ),
+                label: 'Profile',
               ),
             ],
           ),

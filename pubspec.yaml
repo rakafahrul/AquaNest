@@ -92,6 +92,10 @@ flutter:
     - assets/images/pengurasan/
     - assets/images/pengurasan/ikan.png
     - assets/images/
+    - assets/images/profile/bg.png
+    - assets/images/profile/kepala.png
+
+
   fonts:
   - family: Poppins
     fonts:

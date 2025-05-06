@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:aquanest/pages/login_page.dart';
 import 'package:aquanest/pages/dashboard_page.dart';
-import 'package:aquanest/pages/history_page.dart';
-import 'package:aquanest/pages/riwayat_kekeruhan.dart';
-import 'package:aquanest/pages/riwayat_pengurasan.dart';
-import 'package:aquanest/pages/profile_page.dart';
+import 'package:aquanest/pages/history/history_page.dart';
+import 'package:aquanest/pages/history/riwayat_kekeruhan.dart';
+import 'package:aquanest/pages/history/riwayat_pengurasan.dart';
+import 'package:aquanest/pages/profile/profile_page.dart';
 import 'package:aquanest/pages/splash_screen.dart';
 
 class AppRoutes {
