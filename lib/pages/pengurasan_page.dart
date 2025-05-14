@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
+// import 'package:mqtt_client/mqtt_client.dart';
+// import 'package:mqtt_client/mqtt_server_client.dart';
 import '../widgets/navbar.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -13,51 +13,87 @@ class PengurasanPage extends StatefulWidget {
 }
 
 class _PengurasanPageState extends State<PengurasanPage> {
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
-  bool isDraining = false;
-  double waterLevel = 0.0;
+  final DatabaseReference _controlRef = FirebaseDatabase.instance.ref('controls');
+  final DatabaseReference _sensorRef = FirebaseDatabase.instance.ref('sensors');
 
-  @override
+  bool _isLoading = true;
+  bool _isDraining = false;
+  String controlSource = 'app';  // Default kontrol dari aplikasi
+  double waterLevel = 100.0; // Asumsi awal air pada ketinggian 100 cm
+
+
+   @override
   void initState() {
     super.initState();
-    _setupListeners();
-    // _connectToMQTT();
+    _listenToFirebase();
+    status_siklus();
+    
   }
 
-  void _setupListeners() {
-    // Listen ke level air
-    _dbRef.child('sensors/water_level').onValue.listen((event) {
-      final data = event.snapshot.value;
-      if (data != null) {
-        setState(() {
-          waterLevel = double.parse(data.toString());
-        });
-        
-        // Otomatis matikan pompa jika level di bawah 10cm
-        if (isDraining && waterLevel < 10) {
-          _stopDraining();
-        }
-      }
-    });
-    // Listen ke status pompa
-    _dbRef.child('controls/pompa_pengisian').onValue.listen((event) {
-      final data = event.snapshot.value as bool?;
+  void status_siklus() {
+    _controlRef.child('status_siklus').onValue.listen((event) {
+      final status = event.snapshot.value?.toString() ?? 'idle';
       setState(() {
-        isDraining = data ?? false;
+        _isDraining = status == 'running';
       });
     });
   }
 
-  void _startDraining() {
-    _dbRef.child('controls/pompa_pengisian').set(true);
+  // Menghubungkan dengan Firebase dan mendengarkan perubahan data
+  void _listenToFirebase() {
+    _sensorRef.child('jarak').onValue.listen((event) {
+      final data = event.snapshot.value;
+      if (data != null) {
+        setState(() {
+          waterLevel = double.tryParse(data.toString()) ?? 100.0;
+        });
+      }
+    });
+
+    _controlRef.child('control_source').onValue.listen((event) {
+      setState(() {
+        controlSource = (event.snapshot.value ?? 'app').toString();
+      });
+    });
   }
 
-  void _stopDraining() {
-    _dbRef.child('controls/pompa_pengisian').set(false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pengurasan selesai.')),
-    );
+  // Fungsi untuk memulai siklus pengurasan
+  Future<void> _startDraining() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Mengirimkan perintah ke Firebase untuk memulai siklus
+      await _controlRef.update({
+        'pompa_pengurasan': true,  // Aktifkan pompa pengurasan
+        'pompa_pengisian': false,  // Pastikan pompa pengisian dimatikan
+        'status_siklus': 'running',
+      });
+
+      // Kirimkan kontrol sumber ke Firebase untuk memberi tahu bahwa ini dari perangkat (ESP32)
+      await _controlRef.update({
+        'control_source': 'device',
+      });
+
+      setState(() {
+        _isLoading = false;
+        _isDraining = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Siklus pengurasan dimulai')),
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memulai pengurasan: $e')),
+      );
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -199,21 +235,22 @@ class _PengurasanPageState extends State<PengurasanPage> {
                   ),
                   const SizedBox(height: 30),
                   SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isDraining ? null : _startDraining,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF054B95),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12), // <-- Radius di sini
+                     width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isDraining ? null : _startDraining,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isDraining ? Colors.red : const Color(0xFF054B95),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        isDraining ? 'Sedang Menguras...' : 'Mulai Pengurasan',
-                        style: const TextStyle(fontSize: 18),
-                      ),
+                       child: Text(
+                          _isDraining ? 'Sedang Berjalan' : 'Mulai Pengurasan',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      
                     ),
                   ),
                 ],

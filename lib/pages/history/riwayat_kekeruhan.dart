@@ -49,11 +49,30 @@ import 'package:intl/intl.dart';
 class RiwayatKekeruhanPage extends StatelessWidget {
   const RiwayatKekeruhanPage({super.key});
 
+  // String formatTanggal(DateTime date) {
+  //   final hari = DateFormat('EEEE', 'id_ID').format(date); // Hari dalam Bahasa Indonesia
+  //   final tanggalLengkap = DateFormat('d MMMM yyyy | HH:mm', 'id_ID').format(date);
+  //   return '$hari, $tanggalLengkap';
+  // }
+
   String formatTanggal(DateTime date) {
-    final hari = DateFormat('EEEE', 'id_ID').format(date); // Hari dalam Bahasa Indonesia
-    final tanggalLengkap = DateFormat('d MMMM yyyy | HH:mm', 'id_ID').format(date);
-    return '$hari, $tanggalLengkap';
-  }
+  // Definisikan nama hari dalam Bahasa Indonesia
+  final List<String> hariIndonesia = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  final List<String> bulanIndonesia = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  
+  // Ambil hari (1-7, dimana 1 adalah Senin)
+  final int dayIndex = date.weekday - 1;
+  final String hari = hariIndonesia[dayIndex];
+  
+  // Format tanggal manual
+  final String tanggal = date.day.toString();
+  final String bulan = bulanIndonesia[date.month - 1];
+  final String tahun = date.year.toString();
+  final String jam = date.hour.toString().padLeft(2, '0');
+  final String menit = date.minute.toString().padLeft(2, '0');
+  
+  return '$hari, $tanggal $bulan $tahun | $jam:$menit';
+}
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +156,7 @@ class RiwayatKekeruhanPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 100, 16, 16),
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('water_quality_history')
+                  .collection('riwayat_kekeruhan')
                   .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
@@ -163,6 +182,11 @@ class RiwayatKekeruhanPage extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final data = snapshot.data!.docs[index];
                     final timestamp = (data['timestamp'] as Timestamp).toDate();
+                    DateTime? waktu;
+                    if (data['timestamp'] != null) {
+                      waktu = (data['timestamp'] as Timestamp).toDate();
+                    }
+
                     final value = data['ntu'];
 
                     return Container(
