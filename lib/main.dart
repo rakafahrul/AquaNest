@@ -16,7 +16,7 @@ void main() async {
           authDomain: "aquanest-ad54e.firebaseapp.com",
           projectId: "aquanest-ad54e",
           messagingSenderId: "552773995749",
-          appId: "1:552773995749:web:f47202e8e9f857db55580c", // Pastikan ini app ID untuk web
+          appId: "1:552773995749:web:f47202e8e9f857db55580c", 
           storageBucket: "aquanest-ad54e.appspot.com",
           databaseURL: "https://aquanest-ad54e-default-rtdb.asia-southeast1.firebasedatabase.app/",
         )

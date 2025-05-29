@@ -64,14 +64,14 @@ class _PengurasanPageState extends State<PengurasanPage> {
     });
 
     try {
-      // Mengirimkan perintah ke Firebase untuk memulai siklus
+      
       await _controlRef.update({
-        'pompa_pengurasan': true,  // Aktifkan pompa pengurasan
-        'pompa_pengisian': false,  // Pastikan pompa pengisian dimatikan
+        'pompa_pengurasan': true, 
+        'pompa_pengisian': false,  
         'status_siklus': 'running',
       });
 
-      // Kirimkan kontrol sumber ke Firebase untuk memberi tahu bahwa ini dari perangkat (ESP32)
+      
       await _controlRef.update({
         'control_source': 'device',
       });
