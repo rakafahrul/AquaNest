@@ -1,15 +1,9 @@
-// import 'package:flutter/material.dart'
-import 'package:flutter/material.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:mqtt_client/mqtt_client.dart';
-// import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
-import 'package:aquanest/widgets/navbar.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
-// import 'package:aquanest/pages/gauge_page.dart';
-
+import 'notification_page.dart'; // Pastikan file notification_page.dart ada
+import '../widgets/navbar.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -20,47 +14,70 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final DatabaseReference _sensorRef = FirebaseDatabase.instance.ref('sensors');
+  final DatabaseReference _thresholdRef = FirebaseDatabase.instance.ref('threshold');
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DatabaseReference databaseReference = FirebaseDatabase.instance.ref();
-  // final databaseReference = FirebaseDatabase.instance.ref('.info/connected');
-  
 
   double ntuValue = 0.0;
   double waterLevel = 0.0;
-  bool _isLoading = true; 
   bool _isConnected = false;
+  bool hasNotifications = false;
+  double maxTurbidity = 70.0;
+  bool _hasSentWarning = false;
+  bool _hasShownPopup = false;
 
   @override
   void initState() {
     super.initState();
     _setupFirebaseListener();
+    _setupThresholdListener();
+    _checkNotifications();
+  }
 
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   void _setupFirebaseListener() {
-
-    databaseReference.onValue.listen((event) {
+    databaseReference.child('.info/connected').onValue.listen((event) {
       final connected = event.snapshot.value as bool?;
-      setState(() {
-        _isConnected = connected ?? false;
-      });
-      print(_isConnected ? 'Terhubung ke Firebase' : 'Terputus dari Firebase');
-    });
-
-    // Listener untuk kekeruhan air
-    _sensorRef.child('turbidity').onValue.listen((event) {
-      final data = event.snapshot.value;
-      if (data != null) {
+      if (mounted) {
         setState(() {
-          ntuValue = (data as num).toDouble();
+          _isConnected = connected ?? false;
         });
       }
     });
 
-    // Listener untuk level air
+    _sensorRef.child('turbidity').onValue.listen((event) {
+      final data = event.snapshot.value;
+      if (data != null && mounted) {
+        double ntu = (data as num).toDouble();
+        setState(() {
+          ntuValue = ntu;
+          _checkNotifications();
+        });
+
+        // Notifikasi crossing threshold + popup
+        if (ntu > maxTurbidity) {
+          if (!_hasSentWarning) {
+            _saveNotificationToFirestore(ntu);
+            _hasSentWarning = true;
+          }
+          if (!_hasShownPopup) {
+            _showWarningPopup(ntu);
+            _hasShownPopup = true;
+          }
+        } else {
+          _hasSentWarning = false;
+          _hasShownPopup = false;
+        }
+      }
+    });
+
     _sensorRef.child('jarak').onValue.listen((event) {
       final data = event.snapshot.value;
-      if (data != null) {
+      if (data != null && mounted) {
         setState(() {
           waterLevel = (data as num).toDouble();
         });
@@ -68,32 +85,125 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  Future<void> _saveToFirestore() async {
+  void _setupThresholdListener() {
+    _thresholdRef.child('max_turbidity').onValue.listen((event) {
+      final data = event.snapshot.value;
+      if (data != null && mounted) {
+        setState(() {
+          maxTurbidity = double.parse(data.toString());
+          _checkNotifications();
+        });
+      }
+    });
+  }
+
+  Future<void> _checkNotifications() async {
+    if (!mounted) return;
     try {
-      final now = DateTime.now();
-      final formatter = DateFormat('EEEE, dd MMMM yyyy - HH:mm');
-      final formattedDate = formatter.format(now);
+      if (ntuValue > maxTurbidity) {
+        if (mounted) {
+          setState(() {
+            hasNotifications = true;
+          });
+        }
+        return;
+      }
+      final notifDocs = await _firestore
+          .collection('notifikasi')
+          .orderBy('time', descending: true)
+          .limit(1)
+          .get();
 
-      await _firestore.collection('riwayat_kekeruhan').add({
-        'waktu': formattedDate,
-        'ntu': ntuValue.toStringAsFixed(1),
-        'water_level': waterLevel.toStringAsFixed(1),
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      bool hasWarning = false;
+      if (notifDocs.docs.isNotEmpty) {
+        final notif = notifDocs.docs.first.data();
+        final double lastNtu = (notif['ntu'] as num).toDouble();
+        final bool isWarning = notif['isWarning'] ?? false;
+        if (isWarning && lastNtu > maxTurbidity) {
+          hasWarning = true;
+        }
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data berhasil disimpan')),
-      );
+      if (mounted) {
+        setState(() {
+          hasNotifications = hasWarning;
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan: $e')),
-      );
+      print('Error checking notifications: $e');
     }
   }
 
+  Future<void> _saveNotificationToFirestore(double ntu) async {
+    try {
+      await _firestore.collection('notifikasi').add({
+        'isWarning': true,
+        'message': 'Kekeruhan Air Melewati Batas Aman',
+        'ntu': ntu,
+        'time': FieldValue.serverTimestamp(),
+        'title': 'Peringatan Kekeruhan',
+      });
+    } catch (e) {
+      print('Gagal menyimpan notifikasi: $e');
+    }
+  }
 
+  void _showWarningPopup(double ntu) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          "PERINGATAN Kekeruhan Air",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF054B95),
+          ),
+        ),
+        content: Text(
+          "Kekeruhan air melebihi batas aman!\n\nNTU: ${ntu.toStringAsFixed(1)}",
+          style: const TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 16,
+            color: Colors.black,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("OK", style: TextStyle(color: Color(0xFF054B95))),
+          ),
+        ],
+      ),
+    );
+  }
 
-    @override
+  Future<void> _saveToFirestore() async {
+    if (!mounted) return;
+    try {
+      await _firestore.collection('riwayat_kekeruhan').add({
+        'ntu': ntuValue,
+        'water_level': waterLevel,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Data berhasil disimpan')),
+        );
+      }
+      _checkNotifications();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan: $e')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -112,6 +222,44 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
         elevation: 0,
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.notifications,
+                  color: Color(0xFF054B95),
+                  size: 28,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotificationPage()),
+                  ).then((_) {
+                    _checkNotifications();
+                  });
+                },
+              ),
+              if (hasNotifications)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 12,
+                      minHeight: 12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Stack(
         children: [
@@ -119,18 +267,54 @@ class _DashboardPageState extends State<DashboardPage> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color.fromRGBO(210, 244, 255, 1), 
-                  Color.fromRGBO(5, 78, 149, 1),],
+                colors: [Color.fromRGBO(210, 244, 255, 1), Color.fromRGBO(5, 78, 149, 1)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
           ),
-          
-          // Background decorations (keep your existing decorations)
-          ..._buildBackgroundDecorations(),
-          
-          
+          Positioned(
+            right: 0,
+            bottom: 50,
+            child: Image.asset(
+              'assets/images/dashboard/background1.png',
+              fit: BoxFit.cover,
+              height: 200,
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: -40,
+            child: Image.asset(
+              'assets/images/dashboard/background2.png',
+              fit: BoxFit.cover,
+              height: 200,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 260,
+            bottom: 50,
+            child: Image.asset(
+              'assets/images/dashboard/rumput_laut.png',
+              height: 200,
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            child: Image.asset(
+              'assets/images/dashboard/coral.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 20,
+            child: Image.asset(
+              'assets/images/dashboard/ikan.png',
+              fit: BoxFit.contain,
+            ),
+          ),
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -138,14 +322,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 40),
-                  
-                  // Turbidity Card
                   _buildTurbidityCard(),
-
-                  
                   const SizedBox(height: 10),
-                  
-                  // Save Button
                   _buildSaveButton(),
                 ],
               ),
@@ -157,60 +335,12 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  List<Widget> _buildBackgroundDecorations() {
-    return [
-      Positioned(
-        right: 0,
-        bottom: 50,
-        child: Image.asset(
-          'assets/images/dashboard/background1.png',
-          fit: BoxFit.cover,
-          height: 200,
-        ),
-      ),
-      Positioned(
-        right: 0,
-        bottom: -40,
-        child: Image.asset(
-          'assets/images/dashboard/background2.png',
-          fit: BoxFit.cover,
-          height: 200,
-        ),
-      ),
-      Positioned(
-        left: 0,
-        right: 260,
-        bottom: 50,
-        child: Image.asset(
-          'assets/images/dashboard/rumput_laut.png',
-          height: 200,
-        ),
-      ),
-      Positioned(
-        bottom: 0,
-        child: Image.asset(
-          'assets/images/dashboard/coral.png',
-          fit: BoxFit.contain,
-        ),
-      ),
-      Positioned(
-        right: 0,
-        bottom: 20,
-        child: Image.asset(
-          'assets/images/dashboard/ikan.png',
-          fit: BoxFit.contain,
-        ),
-      ),
-    ];
-  }
-
   Widget _buildTurbidityCard() {
     return Card(
       elevation: 0,
       color: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -268,18 +398,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-            // SizedBox(
-            //   height: 200,
-            //   child: _isLoading 
-            //       ? const Center(child: CircularProgressIndicator())
-            //       : TurbidityGauge(turbidityValue: ntuValue),
-              
-            // ),
           ],
         ),
       ),
     );
   }
+
   Widget _buildSaveButton() {
     return ElevatedButton.icon(
       onPressed: _saveToFirestore,

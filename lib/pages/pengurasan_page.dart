@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 // import 'package:mqtt_client/mqtt_server_client.dart';
 import '../widgets/navbar.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:logger/logger.dart';
 
 
 class PengurasanPage extends StatefulWidget {
@@ -56,6 +59,31 @@ class _PengurasanPageState extends State<PengurasanPage> {
       });
     });
   }
+  
+  // Fungsi untuk mencatat riwayat pengurasan
+  Future<void> _recordDrainHistory() async {
+    try {
+      await FirebaseFirestore.instance.collection('drain_history').add({
+        'timestamp': FieldValue.serverTimestamp(),
+        'userId': FirebaseAuth.instance.currentUser?.uid,
+        'waterLevel': waterLevel, // Jika ada variabel waterLevel
+        'isAutomatic': true,
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Riwayat pengurasan berhasil dicatat')),
+        );
+      }
+    } catch (e) {
+      print('Error recording drain history: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mencatat riwayat pengurasan: $e')),
+        );
+      }
+    }
+  }
 
   // Fungsi untuk memulai siklus pengurasan
   Future<void> _startDraining() async {
@@ -64,17 +92,33 @@ class _PengurasanPageState extends State<PengurasanPage> {
     });
 
     try {
+
+      // Update status pengurasan ke 'running' terlebih dahulu
+      await _controlRef.update({
+        'status_siklus': 'running',
+      });
       
+      // Kemudian aktifkan pompa pengurasan
       await _controlRef.update({
         'pompa_pengurasan': true, 
         'pompa_pengisian': false,  
-        'status_siklus': 'running',
       });
-
       
+      // Update sumber kontrol
       await _controlRef.update({
         'control_source': 'device',
       });
+      
+      // await _controlRef.update({
+      //   'pompa_pengurasan': true, 
+      //   'pompa_pengisian': false,  
+      //   'status_siklus': 'running',
+      // });
+
+      
+      // await _controlRef.update({
+      //   'control_source': 'device',
+      // });
 
       setState(() {
         _isLoading = false;
@@ -84,6 +128,10 @@ class _PengurasanPageState extends State<PengurasanPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Siklus pengurasan dimulai')),
       );
+
+      // Catat riwayat pengurasan
+      await _recordDrainHistory();
+
     } catch (e) {
       setState(() {
         _isLoading = false;

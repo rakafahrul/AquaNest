@@ -52,18 +52,44 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   Future<void> _login() async {
     setState(() => isLoading = true);
     try {
-      await _auth.signInWithEmailAndPassword(
+      // Cek apakah email dan password sudah diisi
+      if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
+        throw Exception('Email dan password harus diisi');
+      }
+      
+      // Login dengan Firebase Auth
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
+      
+      // Verifikasi bahwa user berhasil login
+      if (userCredential.user == null) {
+        throw Exception('Login gagal: User tidak ditemukan');
+      }
+      
+      // Log berhasil login
+      print('User logged in: ${userCredential.user!.email}');
+      
+      
       if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Login gagal: ${e.toString()}')));
+        String errorMessage = 'Login gagal: ${e.toString()}';
+        // Tampilkan pesan yang lebih user-friendly
+        if (e.toString().contains('user-not-found')) {
+          errorMessage = 'Email tidak terdaftar';
+        } else if (e.toString().contains('wrong-password')) {
+          errorMessage = 'Password salah';
+        } else if (e.toString().contains('invalid-email')) {
+          errorMessage = 'Format email tidak valid';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage))
+        );
       }
     } finally {
       if (mounted) setState(() => isLoading = false);

@@ -39,9 +39,12 @@ dependencies:
   firebase_core: ^2.27.0
   firebase_auth: ^4.17.8
   firebase_database: ^10.3.15
-  flutter_local_notifications: ^17.0.0
+  flutter_local_notifications: ^19.2.1
+  firebase_messaging: ^14.7.19
   logger: ^1.0.0
   syncfusion_flutter_gauges: ^24.1.41
+  timezone: ^0.10.1
+  rxdart: ^0.28.0
   flutter_localizations:
     sdk: flutter
   

@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'routes/app_routes.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -20,8 +21,11 @@ void main() async {
           storageBucket: "aquanest-ad54e.appspot.com",
           databaseURL: "https://aquanest-ad54e-default-rtdb.asia-southeast1.firebasedatabase.app/",
         )
-      : null, // Untuk mobile akan menggunakan file konfigurasi default
+      : null, 
   );
+
+  // Inisialisasi service notifikasi
+  // await NotificationService().initNotification();
 
 
   runApp(const MyApp());
